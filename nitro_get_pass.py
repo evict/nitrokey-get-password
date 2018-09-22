@@ -113,6 +113,14 @@ def main():
 
     device_connected = libnitrokey.NK_login_auto()
 
+    pin = dialog_get_password(libnitrokey.NK_get_user_retry_count())
+    pin_correct = libnitrokey.NK_enable_password_safe(pin)
+
+    if pin_correct != 0:
+        libnitrokey.NK_logout()
+        return False
+
+
     if not device_connected:
         return False
 
@@ -122,13 +130,6 @@ def main():
         return True
 
     name = argv[1]
-
-    pin = dialog_get_password(libnitrokey.NK_get_user_retry_count())
-    pin_correct = libnitrokey.NK_enable_password_safe(pin)
-
-    if pin_correct != 0:
-        libnitrokey.NK_logout()
-        return False
 
     index = get_slot(libnitrokey, name)
 
