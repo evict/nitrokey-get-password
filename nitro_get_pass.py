@@ -60,16 +60,15 @@ def get_library():
     return C
 
 
-def get_slot(libnitrokey, name=False):
+def get_slot(libnitrokey, status, name=False):
 
     slots = []
 
-    for i in range(0, 15):
-        entry = (ffi.string(
-                            libnitrokey.NK_get_password_safe_slot_name(i)
-                            ).decode('utf-8', errors='replace'))
-
-        if entry[0:3].isprintable():
+    for i in range(0, len(status)):
+        if status[i] != 0:
+            entry = (ffi.string(
+                                libnitrokey.NK_get_password_safe_slot_name(i)
+                                ).decode('utf-8', errors='replace'))
             slots.append(entry)
 
         else:
@@ -107,24 +106,31 @@ def main():
 
     device_connected = libnitrokey.NK_login_auto()
 
-    pin = dialog_get_password(libnitrokey.NK_get_user_retry_count())
-    pin_correct = libnitrokey.NK_enable_password_safe(pin)
-
     if not device_connected:
         return False
 
-    if pin_correct != 0:
-        libnitrokey.NK_logout()
-        return False
+    status = libnitrokey.NK_get_password_safe_slot_status()
+
+    if not status:
+
+        pin = dialog_get_password(libnitrokey.NK_get_user_retry_count())
+        pin_correct = libnitrokey.NK_enable_password_safe(pin)
+        status = libnitrokey.NK_get_password_safe_slot_status()
+
+        if pin_correct != 0:
+            libnitrokey.NK_logout()
+            return False
+
+    status = ffi.unpack(status, 16)
 
     if len(argv) < 2:
-        get_slot(libnitrokey)
+        get_slot(libnitrokey, status)
         libnitrokey.NK_logout()
         return True
 
     name = argv[1]
 
-    index = get_slot(libnitrokey, name)
+    index = get_slot(libnitrokey, status, name)
 
     if index is False:
         libnitrokey.NK_logout()
