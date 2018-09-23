@@ -26,7 +26,6 @@ import tkinter as tk
 import tkinter.simpledialog
 from sys import argv
 from os import access, R_OK
-from random import SystemRandom as random
 
 
 ffi = cffi.FFI()
@@ -59,11 +58,6 @@ def get_library():
     C = ffi.dlopen(p)
 
     return C
-
-
-def gen_temp_passwd():
-    return ''.join([random().choice('0123456789ABCDEF')
-                    for x in range(20)])
 
 
 def get_slot(libnitrokey, name=False):
@@ -116,12 +110,11 @@ def main():
     pin = dialog_get_password(libnitrokey.NK_get_user_retry_count())
     pin_correct = libnitrokey.NK_enable_password_safe(pin)
 
-    if pin_correct != 0:
-        libnitrokey.NK_logout()
+    if not device_connected:
         return False
 
-
-    if not device_connected:
+    if pin_correct != 0:
+        libnitrokey.NK_logout()
         return False
 
     if len(argv) < 2:
